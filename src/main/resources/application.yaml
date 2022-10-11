@@ -1,0 +1,17 @@
+server:
+    Port: 8080 # port number
+spring:
+    datasource:
+        type: com.zaxxer.hikari.HikariDataSource
+        url: jdbc:sqlite:D:\xampp\htdocs\java\calenda-java\db.sqlite
+        username:
+        password:
+        driver-class-name: org.sqlite.JDBC
+#mybatis:
+#    mapper-locations:
+#        classpath: mybatis / mapper / * mapper.xml # configuration mapper.xml file path
+#        type-aliases-package: com.deesire.entity # entity class package name
+# Mybatis Print SQL, then print the SQL statement executed in the console after printing
+#logging:
+#  level:
+#    com.desire.dao: debug

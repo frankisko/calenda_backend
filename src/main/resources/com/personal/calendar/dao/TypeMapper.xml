@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.personal.calendar.dao.TypeMapper">
+
+    <resultMap id="type" type="com.personal.calendar.dto.Type">
+        <id property="idType" column="id_type"/>
+        <result property="name" column="name"/>
+		<result property="color" column="color"/>
+		<result property="duration" column="duration"/>
+
+    </resultMap>
+
+    <select id="getTypes" resultMap="type">
+
+        SELECT *
+        FROM types
+        WHERE status != 'I'
+
+    </select>
+
+    <select id="getType" resultMap="type">
+
+        SELECT *
+        FROM types
+        WHERE id_type = #{idType}
+        AND status != 'I'
+
+    </select>
+
+	 <select id="pagedList" resultMap="type">
+        SELECT
+			id_type, name, color, duration
+        FROM types
+		WHERE status != 'I'
+
+        <include refid="fragmentList"/>
+
+        <if test="order != null and order.size() > 0">
+            ORDER BY
+                <foreach item="item" index="index" collection="order" separator=",">
+                    <choose>
+                        <when test="item.column == 1">
+                            id_type ${item.dir}
+                        </when>
+                        <when test="item.column == 2">
+                            name ${item.dir}
+                        </when>
+                        <when test="item.column == 3">
+                            color ${item.dir}
+                        </when>
+                        <when test="item.column == 4">
+                            duration ${item.dir}
+                        </when>
+                        <when test="item.column == 5">
+                            status ${item.dir}
+                        </when>
+                        <otherwise>
+                            id_type ${item.dir}
+                        </otherwise>
+                    </choose>
+                </foreach>
+        </if>
+        <if test="order == null or order.size() == 0">
+            ORDER BY id_type ASC
+        </if>
+        LIMIT #{length} OFFSET #{start}
+
+    </select>
+
+    <select id="countType" resultType="int">
+        SELECT
+			COUNT(1)
+        FROM types
+		WHERE status != 'I'
+
+        <include refid="fragmentList"/>
+    </select>
+
+    <sql id="fragmentList">
+        <if test="search != null">
+            AND (LOWER(name) LIKE LOWER('%' || #{search} || '%'))
+        </if>
+    </sql>
+
+    <insert id="insertType" >
+
+        INSERT INTO types (id_type, name, color, duration, status)
+        VALUES (#{idType}, #{name}, #{color}, #{duration}, #{status})
+
+    </insert>
+
+    <update id="updateType">
+
+        UPDATE types SET
+            name = #{name},
+            color = #{color},
+            duration = #{duration},
+            status = #{status}
+        WHERE id_type = #{idType}
+
+    </update>
+
+    <update id="deleteType">
+
+        UPDATE types
+        SET status = 'I'
+        WHERE id_type = #{idType}
+
+    </update>
+
+</mapper>

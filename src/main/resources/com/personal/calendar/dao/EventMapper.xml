@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.personal.calendar.dao.EventMapper">
+    <resultMap id="event" type="com.personal.calendar.dto.Event">
+        <id property="idEvent" column="id_event"/>
+        <result property="name" column="name"/>
+		<result property="description" column="description"/>
+        <result property="status" column="status"/>
+        <result property="type.idType" column="type_id"/>
+		<result property="type.name" column="type_name"/>
+        <result property="type.color" column="type_color"/>
+        <result property="type.duration" column="type_duration"/>
+        <result property="date" column="date"/>
+    </resultMap>
+
+    <select id="getEvents" resultMap="event">
+
+        SELECT
+            events.id_event, events.name, events.description, types.name AS type_name, types.duration AS type_duration,
+            events.date, events.status
+        FROM events INNER JOIN types ON events.id_type = types.id_type
+        WHERE events.status != 'I'
+
+    </select>
+
+    <select id="getEvent" resultMap="event">
+
+        SELECT
+            events.id_event, events.name, events.description, events.date,
+            events.date, events.status,
+            types.id_type AS type_id , types.name AS type_name
+        FROM events INNER JOIN types ON events.id_type = types.id_type
+        WHERE events.id_event = #{idEvent}
+        AND events.status != 'I'
+
+    </select>
+
+    <select id="pagedList" resultMap="event">
+        SELECT
+            events.id_event, events.name, events.date,
+            types.name AS type_name
+        FROM events INNER JOIN types ON events.id_type = types.id_type
+		WHERE events.status != 'I'
+
+        <include refid="fragmentList"/>
+
+        <if test="order != null and order.size() > 0">
+            ORDER BY
+                <foreach item="item" index="index" collection="order" separator=",">
+                    <choose>
+                        <when test="item.column == 1">
+                            events.id_event ${item.dir}
+                        </when>
+                        <when test="item.column == 2">
+                            events.name ${item.dir}
+                        </when>
+                        <when test="item.column == 3">
+                            events.id_type ${item.dir}
+                        </when>
+                        <when test="item.column == 4">
+                            events.date ${item.dir}
+                        </when>
+                        <otherwise>
+                            events.id_event ${item.dir}
+                        </otherwise>
+                    </choose>
+                </foreach>
+        </if>
+        <if test="order == null or order.size() == 0">
+            ORDER BY events.id_event ASC
+        </if>
+        LIMIT #{length} OFFSET #{start}
+
+    </select>
+
+    <select id="countEvent" resultType="int">
+        SELECT
+			COUNT(1)
+        FROM events
+		WHERE events.status != 'I'
+
+        <include refid="fragmentList"/>
+    </select>
+
+    <select id="getEventsCalendar" resultMap="event">
+
+        SELECT
+            events.id_event, events.name, events.date, events.description,
+            types.name AS type_name, types.color AS type_color, types.duration AS type_duration
+        FROM events INNER JOIN types ON events.id_type = types.id_type
+        WHERE events.status != 'I'
+        AND events.date BETWEEN #{startDate} AND #{endDate}
+
+    </select>
+
+
+    <sql id="fragmentList">
+        <if test="search != null">
+            AND (LOWER(events.name) LIKE LOWER('%' || #{search} || '%'))
+        </if>
+    </sql>
+
+    <insert id="insertEvent" >
+
+        INSERT INTO events (id_event, name, description, id_type, date, status)
+        VALUES (#{idEvent}, #{name}, #{description}, #{type.idType}, #{date}, #{status})
+
+    </insert>
+
+    <update id="updateEvent">
+
+        UPDATE events SET
+            name = #{name},
+            description = #{description},
+            id_type = #{type.idType},
+            date = #{date},
+            status = #{status}
+        WHERE id_event = #{idEvent}
+
+    </update>
+
+    <update id="deleteEvent">
+
+        UPDATE events
+        SET status = 'I'
+        WHERE id_event = #{idEvent}
+
+    </update>
+
+    <update id="removeObsoleteEvents">
+
+        UPDATE events
+        SET status = 'I'
+        WHERE id_type IN (
+            SELECT id_type
+            FROM types
+            WHERE duration = 'O'
+        )
+        <![CDATA[
+            AND date < strftime('%s', 'now') * 1000;
+        ]]>
+    </update>
+
+    <update id="renewPermanentEvents">
+
+        UPDATE events
+        SET date = #{date}
+        WHERE id_event = #{idEvent}
+
+    </update>
+
+</mapper>
